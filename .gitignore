@@ -28,9 +28,14 @@ yarn-error.log*
 bun-debug.log*
 
 # Dados processados
-data/audio/
-data/transcripts/
-data/content/
+data/audio/*
+!data/audio/.gitkeep
+data/transcripts/*
+!data/transcripts/.gitkeep
+data/content/*
+!data/content/.gitkeep
+data/videos/*.mp4
+!data/videos/.gitkeep
 
 # Arquivos de sistema
 .DS_Store
@@ -62,4 +67,4 @@ bun.lockb
 
 # Outros
 .vercel
-.netlify
+.netlify 
