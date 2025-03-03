@@ -1,13 +1,16 @@
 import { OpenAI } from "openai";
+import { VectorStore } from "./services/vectorStore";
 import config from "./config";
 import { createInterface } from "readline";
 import { logger } from "./utils/logger";
-import { queryVectorStore } from "./services/vectorStore";
 
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: config.openai.apiKey,
 });
+
+// Initialize VectorStore
+const vectorStore = new VectorStore();
 
 // Create readline interface
 const rl = createInterface({
@@ -65,9 +68,9 @@ async function chat() {
       }
 
       try {
-        // Buscar contexto relevante
+        // Buscar contexto relevante usando o VectorStore
         console.log("Buscando informações...");
-        const results = await queryVectorStore(query, 3); // Buscar até 3 resultados
+        const results = await vectorStore.similaritySearch(query, 0.5, 3); // Reduced threshold to 0.5 for better recall
 
         if (results.length === 0) {
           console.log(

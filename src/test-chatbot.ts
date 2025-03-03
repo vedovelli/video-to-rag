@@ -1,7 +1,7 @@
 import { OpenAI } from "openai";
+import { VectorStore } from "./services/vectorStore";
 import config from "./config";
 import { logger } from "./utils/logger";
-import { queryVectorStore } from "./services/vectorStore";
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -51,9 +51,10 @@ async function testChatbot() {
   console.log(`🤖 Testando chatbot com a pergunta: "${query}"`);
 
   try {
-    // Buscar contexto relevante
+    // Buscar contexto relevante usando o VectorStore
     console.log("Buscando informações...");
-    const results = await queryVectorStore(query, 3); // Buscar até 3 resultados
+    const vectorStore = new VectorStore();
+    const results = await vectorStore.similaritySearch(query, 0.5, 3); // Reduced threshold to 0.5 for better recall
 
     if (results.length === 0) {
       console.log(
