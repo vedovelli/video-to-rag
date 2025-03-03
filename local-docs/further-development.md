@@ -2,4 +2,6 @@
 
 - Research a cache mechanism to store past searches. When new searches arrive, we should check if we have the answer in the cache, serving from the cache instead of querying the vector DB and engaging OpenAI
 
--
+- Clean up unused
+
+- Integrate an specialized chunking mechanism. Ie: Langchain
