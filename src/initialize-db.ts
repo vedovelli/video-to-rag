@@ -33,7 +33,9 @@ async function initializeDocumentsTable() {
       logger.info(`Tabela documents verificada: ${countData ? "OK" : "Falha"}`);
     }
   } catch (error) {
-    logger.error(`Erro ao inicializar tabela documents: ${error}`);
+    logger.error(
+      `Erro ao inicializar tabela documents: ${JSON.stringify(error)}`
+    );
     throw error;
   }
 }
@@ -44,6 +46,6 @@ initializeDocumentsTable()
     logger.info("Processo de inicialização concluído");
   })
   .catch((error) => {
-    logger.error(`Falha na inicialização: ${error}`);
+    logger.error(`Falha na inicialização: ${JSON.stringify(error)}`);
     process.exit(1);
   });

@@ -68,3 +68,4 @@ bun.lockb
 # Outros
 .vercel
 .netlify 
+.repomix-output.txt

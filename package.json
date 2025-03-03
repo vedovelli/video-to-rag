@@ -5,7 +5,8 @@
   "private": true,
   "devDependencies": {
     "@types/bun": "latest",
-    "bun-types": "^1.2.4"
+    "bun-types": "^1.2.4",
+    "cursor-tools": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
