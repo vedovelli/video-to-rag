@@ -61,11 +61,15 @@ To run the API server:
 bun run src/index.ts
 ```
 
+The server will start on port 3000 by default. You can change this by setting the PORT environment variable.
+
 To run the pipeline and then start the API server:
 
 ```bash
 bun run src/index.ts --run-pipeline
 ```
+
+> **Note:** When running with Bun, you may see a warning message: "Failed to find Response internal state key". This is a known issue with Bun and Hono, but it doesn't affect functionality and can be safely ignored.
 
 ## Testing the API
 

@@ -1,5 +1,6 @@
 import { OpenAI } from "openai";
 import { VectorStore } from "./services/vectorStore";
+import { WsClient } from "@libsql/client/ws";
 import config from "./config";
 import { createInterface } from "readline";
 import { logger } from "./utils/logger";

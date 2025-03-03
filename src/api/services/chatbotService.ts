@@ -41,6 +41,8 @@ export class ChatbotService {
             content: `Você é um assistente de suporte prestativo. Use o seguinte contexto para responder à pergunta do usuário.
             Se você não souber a resposta com base no contexto, diga isso educadamente.
             Todas as suas respostas devem ser em português brasileiro, com um tom amigável e profissional.
+
+            Sempre que exisir um link no contexto, use o link para criar um link para o vídeo no conteúdo da página de suporte.
             
             Contexto:
             ${context}`,

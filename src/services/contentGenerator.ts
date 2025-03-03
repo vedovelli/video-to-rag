@@ -38,13 +38,16 @@ export async function transformToSupportPage(
           1. Crie um título claro e descritivo usando # no início
           2. Organize o conteúdo em seções lógicas usando ## para subtítulos
           3. Use listas com marcadores (- ou *) para etapas ou pontos importantes
-          4. Inclua exemplos de código ou comandos em blocos de código quando relevante
           5. Mantenha um tom profissional mas amigável
           6. Certifique-se de que o conteúdo seja fácil de ler e seguir
           7. Inclua uma breve introdução e conclusão
           8. Adicione dicas ou notas quando apropriado
+
+          O nome do arquivo é ${transcriptPath
+            .split("/")
+            .pop()}. Ele corresponde ao ID do vídeo no YouTube. Utilize esse ID para criar links para o vídeo no conteúdo da página de suporte.
           
-          Se a transcrição estiver vazia ou não contiver informações suficientes, crie uma página de suporte genérica relacionada ao tópico mais provável com base no nome do arquivo.`,
+          Se a transcrição estiver vazia ou não contiver informações suficientes, desconsidere o arquivo.`,
         },
         {
           role: "user",
