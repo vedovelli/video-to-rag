@@ -1,0 +1,11 @@
+---
+description: serve as guidelines to further improve the codebase
+globs: *.tsx, *.ts, *.css
+alwaysApply: false
+---
+
+# Project Guidelines
+- Always refer to [architecture.md](mdc:local-docs/architecture.md) before making changes.
+
+## Refactoring
+- Never change established behavior unless told otherwise. 
