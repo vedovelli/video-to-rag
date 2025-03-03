@@ -2,19 +2,22 @@
   "name": "video-to-rag",
   "module": "index.ts",
   "type": "module",
-  "private": true,
+  "scripts": {
+    "init-db": "bun run src/initialize-db.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
-    "bun-types": "^1.2.4",
+    "@types/uuid": "^10.0.0",
+    "bun-types": "latest",
     "cursor-tools": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.1",
-    "@types/node": "^22.13.8",
+    "@libsql/client": "^0.14.0",
     "dotenv": "^16.4.7",
-    "openai": "^4.86.1"
+    "openai": "^4.86.1",
+    "uuid": "^11.1.0"
   }
 }

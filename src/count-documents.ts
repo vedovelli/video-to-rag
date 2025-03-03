@@ -1,41 +1,22 @@
-import config from "./config";
-import { createClient } from "@supabase/supabase-js";
+import { db } from "./utils/db";
 import { logger } from "./utils/logger";
 
 async function countDocuments() {
-  logger.info("Contando documentos na tabela documents...");
-
   try {
-    // Inicializar cliente do Supabase
-    const supabase = createClient(config.supabase.url, config.supabase.key);
+    const result = await db.execute("SELECT COUNT(*) as count FROM documents");
+    const count = Number(result.rows[0].count);
 
-    // Contar documentos
-    const { count, error } = await supabase
-      .from("documents")
-      .select("*", { count: "exact", head: true });
+    logger.info(`Total de documentos na base: ${count}`);
 
-    if (error) {
-      logger.error(`Erro ao contar documentos: ${error.message}`);
-      throw error;
-    }
+    if (count > 0) {
+      const samples = await db.execute(
+        "SELECT id, content FROM documents LIMIT 3"
+      );
 
-    logger.info(`Total de documentos na tabela: ${count}`);
-
-    // Listar alguns documentos para verificação
-    const { data: samples, error: samplesError } = await supabase
-      .from("documents")
-      .select("id, content, metadata")
-      .limit(3);
-
-    if (samplesError) {
-      logger.error(`Erro ao buscar amostras: ${samplesError.message}`);
-    } else {
-      logger.info("Amostras de documentos:");
-      samples.forEach((doc, index) => {
-        logger.info(`Documento ${index + 1}:`);
-        logger.info(`  ID: ${doc.id}`);
-        logger.info(`  Conteúdo: ${doc.content.substring(0, 100)}...`);
-        logger.info(`  Metadados: ${JSON.stringify(doc.metadata)}`);
+      logger.info("\nAmostras de documentos:");
+      samples.rows.forEach((doc: any) => {
+        logger.info(`\nID: ${doc.id}`);
+        logger.info(`Conteúdo: ${doc.content.substring(0, 150)}...`);
       });
     }
   } catch (error) {
@@ -44,12 +25,13 @@ async function countDocuments() {
   }
 }
 
-// Executar a função
+// Execute the function
 countDocuments()
   .then(() => {
-    logger.info("Contagem concluída");
+    logger.info("Processo concluído");
+    process.exit(0);
   })
   .catch((error) => {
-    logger.error(`Falha na contagem: ${error}`);
+    logger.error(`Falha no processo: ${error}`);
     process.exit(1);
   });
