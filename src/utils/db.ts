@@ -94,6 +94,8 @@ export async function findSimilarDocuments(
           vector_top_k('documents_embedding_idx', vector32(?), ?) as v
         JOIN 
           documents as d ON v.id = d.rowid
+        WHERE 
+          (1 - vector_distance_cos(d.embedding, vector32(?))) >= ?
         ORDER BY 
           distance ASC
         LIMIT ?
@@ -101,21 +103,21 @@ export async function findSimilarDocuments(
       args: [
         JSON.stringify(queryEmbedding),
         JSON.stringify(queryEmbedding),
-        matchCount * 2, // Buscar mais candidatos para filtrar pelo threshold
+        matchCount * 3, // Buscar mais candidatos para filtrar pelo threshold
+        JSON.stringify(queryEmbedding),
+        matchThreshold,
         matchCount,
       ],
     });
 
     // Converter distância para similaridade (distância cosseno = 1 - similaridade cosseno)
-    return result.rows
-      .map((row: any) => ({
-        id: row.id,
-        content: row.content,
-        metadata: JSON.parse(row.metadata),
-        embedding: queryEmbedding, // Não precisamos retornar o embedding real
-        similarity: 1 - row.distance, // Converter distância para similaridade
-      }))
-      .filter((doc) => doc.similarity >= matchThreshold);
+    return result.rows.map((row: any) => ({
+      id: row.id,
+      content: row.content,
+      metadata: JSON.parse(row.metadata),
+      embedding: queryEmbedding, // Não precisamos retornar o embedding real
+      similarity: 1 - row.distance, // Converter distância para similaridade
+    }));
   } catch (error) {
     logger.error(`Error finding similar documents: ${error}`);
     throw error;
