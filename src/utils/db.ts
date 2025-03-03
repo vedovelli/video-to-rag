@@ -18,13 +18,27 @@ export async function initializeDb() {
   logger.info("Initializing database...");
 
   try {
-    // Create documents table
+    // Drop the existing table if it exists
+    await db.execute("DROP TABLE IF EXISTS documents");
+
+    // Create documents table with F32_BLOB vector type
     await db.execute(`
-      CREATE TABLE IF NOT EXISTS documents (
+      CREATE TABLE documents (
         id TEXT PRIMARY KEY,
         content TEXT NOT NULL,
         metadata TEXT NOT NULL,
-        embedding BLOB NOT NULL
+        embedding F32_BLOB(1536) NOT NULL
+      )
+    `);
+
+    // Create a vector index for efficient similarity search
+    await db.execute(`
+      CREATE INDEX documents_embedding_idx 
+      ON documents (
+        libsql_vector_idx(
+          embedding,
+          'metric=cosine'
+        )
       )
     `);
 
@@ -39,18 +53,23 @@ export async function insertDocument(doc: Document) {
   const { id, content, metadata, embedding } = doc;
 
   try {
+    // Validação básica do embedding
+    if (!embedding || !Array.isArray(embedding) || embedding.length === 0) {
+      throw new Error(
+        "Invalid embedding: must be a non-empty array of numbers"
+      );
+    }
+
+    // Inserir o documento com conversão para vetor
     await db.execute({
       sql: `
         INSERT INTO documents (id, content, metadata, embedding)
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, vector32(?))
       `,
-      args: [
-        id,
-        content,
-        JSON.stringify(metadata),
-        Buffer.from(new Float32Array(embedding).buffer),
-      ],
+      args: [id, content, JSON.stringify(metadata), JSON.stringify(embedding)],
     });
+
+    logger.info(`Document inserted successfully: ${id}`);
   } catch (error) {
     logger.error(`Error inserting document: ${error}`);
     throw error;
@@ -62,36 +81,43 @@ export async function findSimilarDocuments(
   matchThreshold: number = 0.7,
   matchCount: number = 5
 ): Promise<Array<Document & { similarity: number }>> {
-  // Since Turso doesn't support vector operations natively,
-  // we'll implement cosine similarity in JavaScript
-  const documents = await db.execute("SELECT * FROM documents");
+  try {
+    // Usar vector_top_k para busca eficiente de vizinhos aproximados
+    const result = await db.execute({
+      sql: `
+        SELECT 
+          d.id, 
+          d.content, 
+          d.metadata,
+          vector_distance_cos(d.embedding, vector32(?)) as distance
+        FROM 
+          vector_top_k('documents_embedding_idx', vector32(?), ?) as v
+        JOIN 
+          documents as d ON v.id = d.rowid
+        ORDER BY 
+          distance ASC
+        LIMIT ?
+      `,
+      args: [
+        JSON.stringify(queryEmbedding),
+        JSON.stringify(queryEmbedding),
+        matchCount * 2, // Buscar mais candidatos para filtrar pelo threshold
+        matchCount,
+      ],
+    });
 
-  const results = documents.rows.map((row: any) => {
-    const embedding = new Float32Array(
-      Buffer.from(row.embedding as Buffer).buffer
-    );
-
-    // Calculate cosine similarity
-    const similarity = cosineSimilarity(queryEmbedding, Array.from(embedding));
-
-    return {
-      id: row.id,
-      content: row.content,
-      metadata: JSON.parse(row.metadata),
-      embedding: Array.from(embedding),
-      similarity,
-    };
-  });
-
-  return results
-    .filter((doc) => doc.similarity >= matchThreshold)
-    .sort((a, b) => b.similarity - a.similarity)
-    .slice(0, matchCount);
-}
-
-function cosineSimilarity(a: number[], b: number[]): number {
-  const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
-  const magnitudeA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
-  const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
-  return dotProduct / (magnitudeA * magnitudeB);
+    // Converter distância para similaridade (distância cosseno = 1 - similaridade cosseno)
+    return result.rows
+      .map((row: any) => ({
+        id: row.id,
+        content: row.content,
+        metadata: JSON.parse(row.metadata),
+        embedding: queryEmbedding, // Não precisamos retornar o embedding real
+        similarity: 1 - row.distance, // Converter distância para similaridade
+      }))
+      .filter((doc) => doc.similarity >= matchThreshold);
+  } catch (error) {
+    logger.error(`Error finding similar documents: ${error}`);
+    throw error;
+  }
 }
