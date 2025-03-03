@@ -1,42 +1,84 @@
+import fetch from "node-fetch";
 import { logger } from "../utils/logger";
 
-async function testChatEndpoint() {
-  try {
-    logger.info("Testing chat endpoint...");
+async function testRegularResponse() {
+  console.log("Testing regular response...");
 
+  try {
     const response = await fetch("http://localhost:3000/api/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        query: "Como funciona o sistema de suporte?",
+        query: "Como faço para criar um novo usuário?",
       }),
     });
 
-    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-    logger.info("Response status:", response.status);
-    logger.info("Response data:", data);
-
-    return data;
+    const data = (await response.json()) as { response: string };
+    console.log("Regular Response:", data.response);
   } catch (error) {
-    logger.error("Error testing chat endpoint:", error);
-    throw error;
+    console.error("Error testing regular response:", error);
+  }
+}
+
+async function testStreamingResponse() {
+  console.log("\nTesting streaming response...");
+
+  try {
+    const response = await fetch("http://localhost:3000/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: "Como faço para criar um novo usuário?",
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log("Streaming Response:");
+
+    // Handle streaming response
+    if (!response.body) {
+      throw new Error("Response body is null");
+    }
+
+    const reader = response.body as any;
+    const decoder = new TextDecoder();
+
+    let result = "";
+    const readableStreamReader = reader.getReader();
+
+    while (true) {
+      const { done, value } = await readableStreamReader.read();
+
+      if (done) {
+        break;
+      }
+
+      const text = decoder.decode(value);
+      process.stdout.write(text);
+      result += text;
+    }
+
+    console.log("\n\nStreaming response complete!");
+  } catch (error) {
+    console.error("Error testing streaming response:", error);
   }
 }
 
 async function main() {
-  try {
-    // Test the chat endpoint
-    await testChatEndpoint();
-
-    logger.info("API tests completed successfully");
-  } catch (error) {
-    logger.error("API tests failed:", error);
-    process.exit(1);
-  }
+  await testRegularResponse();
+  await testStreamingResponse();
 }
 
-// Run the tests
-main();
+main().catch(console.error);

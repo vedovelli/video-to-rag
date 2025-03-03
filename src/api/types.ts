@@ -1,5 +1,6 @@
 export interface ChatRequest {
   query: string;
+  stream?: boolean;
 }
 
 export interface ChatResponse {

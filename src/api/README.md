@@ -1,6 +1,6 @@
 # Chatbot API
 
-This is a REST API for the chatbot using Hono.
+This API provides a simple interface to interact with the chatbot.
 
 ## Endpoints
 
@@ -10,9 +10,9 @@ This is a REST API for the chatbot using Hono.
 GET /
 ```
 
-Returns a simple health check response.
+Returns a simple health check response to verify the API is running.
 
-**Response**
+**Response:**
 
 ```json
 {
@@ -27,17 +27,21 @@ Returns a simple health check response.
 POST /api/chat
 ```
 
-Send a query to the chatbot and get a response.
+Send a query to the chatbot and receive a response.
 
-**Request Body**
+**Request Body:**
 
 ```json
 {
-  "query": "Your question here"
+  "query": "Your question here",
+  "stream": false
 }
 ```
 
-**Response**
+- `query` (string, required): The question to ask the chatbot
+- `stream` (boolean, optional, default: false): Whether to stream the response
+
+**Response (non-streaming):**
 
 ```json
 {
@@ -45,13 +49,102 @@ Send a query to the chatbot and get a response.
 }
 ```
 
-**Error Response**
+**Response (streaming):**
 
-```json
-{
-  "error": "Error message here"
+When `stream` is set to `true`, the response will be streamed as a text/event-stream. Each chunk of the response will be sent as it's generated.
+
+## Streaming Example
+
+### Client-side JavaScript Example
+
+```javascript
+async function streamChatResponse(query) {
+  const response = await fetch("/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query,
+      stream: true,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let result = "";
+
+  // Read the stream
+  while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    const text = decoder.decode(value);
+    result += text;
+
+    // Update UI with the partial response
+    document.getElementById("response").textContent = result;
+  }
+
+  return result;
 }
 ```
+
+### Node.js Example
+
+```javascript
+import fetch from "node-fetch";
+
+async function streamChatResponse(query) {
+  const response = await fetch("http://localhost:3000/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query,
+      stream: true,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const reader = response.body;
+  const decoder = new TextDecoder();
+
+  const readableStreamReader = reader.getReader();
+
+  while (true) {
+    const { done, value } = await readableStreamReader.read();
+
+    if (done) {
+      break;
+    }
+
+    const text = decoder.decode(value);
+    process.stdout.write(text);
+  }
+}
+```
+
+## Testing
+
+You can test the API using the provided test script:
+
+```bash
+bun run test:api
+```
+
+This will test both regular and streaming responses.
 
 ## Running the API
 
@@ -70,11 +163,3 @@ bun run src/index.ts --run-pipeline
 ```
 
 > **Note:** When running with Bun, you may see a warning message: "Failed to find Response internal state key". This is a known issue with Bun and Hono, but it doesn't affect functionality and can be safely ignored.
-
-## Testing the API
-
-To test the API:
-
-```bash
-bun run src/api/test-api.ts
-```

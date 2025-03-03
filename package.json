@@ -7,10 +7,13 @@
     "start": "bun run src/index.ts",
     "start:pipeline": "bun run src/index.ts --run-pipeline",
     "test:api": "bun run src/api/test-api.ts",
+    "test:chatbot": "bun run src/test-chatbot.ts",
+    "test:chatbot:stream": "bun run src/test-chatbot.ts --stream",
     "dev": "bun --watch run src/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/node-fetch": "^2.6.9",
     "@types/uuid": "^10.0.0",
     "bun-types": "latest",
     "cursor-tools": "latest"
@@ -23,6 +26,7 @@
     "@libsql/client": "^0.14.0",
     "dotenv": "^16.4.7",
     "hono": "^4.7.2",
+    "node-fetch": "^3.3.2",
     "openai": "^4.86.1",
     "uuid": "^11.1.0"
   }

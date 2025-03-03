@@ -27,7 +27,7 @@ app.get("/", (c) => {
 app.post("/api/chat", async (c) => {
   try {
     const body = await c.req.json<ChatRequest>();
-    const { query } = body;
+    const { query, stream = false } = body;
 
     if (!query || typeof query !== "string") {
       const errorResponse: ErrorResponse = {
@@ -36,6 +36,22 @@ app.post("/api/chat", async (c) => {
       return c.json(errorResponse, 400);
     }
 
+    // Handle streaming response
+    if (stream) {
+      const streamingResponse = await chatbotService.generateStreamingResponse(
+        query
+      );
+
+      return new Response(streamingResponse, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+        },
+      });
+    }
+
+    // Handle regular response
     const response = await chatbotService.generateResponse(query);
     const chatResponse: ChatResponse = { response };
     return c.json(chatResponse);

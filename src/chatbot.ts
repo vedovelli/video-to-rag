@@ -55,6 +55,37 @@ async function generateResponse(
   }
 }
 
+async function generateStreamingResponse(query: string, context: string) {
+  try {
+    const stream = await openai.chat.completions.create({
+      model: config.openai.model,
+      messages: [
+        {
+          role: "system",
+          content: `Você é um assistente de suporte prestativo. Use o seguinte contexto para responder à pergunta do usuário.
+          Se você não souber a resposta com base no contexto, diga isso educadamente.
+          Todas as suas respostas devem ser em português brasileiro, com um tom amigável e profissional.
+          
+          Contexto:
+          ${context}`,
+        },
+        {
+          role: "user",
+          content: query,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 500,
+      stream: true,
+    });
+
+    return stream;
+  } catch (error) {
+    logger.error("Erro ao gerar resposta em streaming:", error);
+    throw new Error("Falha ao gerar resposta em streaming");
+  }
+}
+
 async function chat() {
   console.log(
     "🤖 Bem-vindo ao Chatbot de Suporte! Digite 'sair' para encerrar."
@@ -89,9 +120,18 @@ async function chat() {
           )
           .join("\n\n---\n\n");
 
-        // Gerar resposta
-        const response = await generateResponse(query, context);
-        console.log(`\n${response}`);
+        // Gerar resposta em streaming
+        process.stdout.write("\n");
+        const stream = await generateStreamingResponse(query, context);
+
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content || "";
+          if (content) {
+            process.stdout.write(content);
+          }
+        }
+
+        process.stdout.write("\n\n");
       } catch (error) {
         console.error("Erro ao processar sua pergunta:", error);
         console.log(
